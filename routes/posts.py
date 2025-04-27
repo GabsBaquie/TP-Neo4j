@@ -8,10 +8,20 @@ graph = Graph("bolt://localhost:7687", auth=("neo4j", "password"))
 post = Post(graph)
 relations = Relations(graph)
 
+
+# ============================
+# Routes pour les posts
+# ============================
+
 @comments_bp.route('/posts', methods=['GET'])
 def get_posts():
     posts = graph.nodes.match("Post")
     return jsonify([{"id": post.identity, "title": post["title"], "content": post["content"]} for post in posts])
+
+
+# ========================================
+# Récupération d'un post par ID
+# ========================================
 
 @comments_bp.route('/posts/<int:post_id>', methods=['GET'])
 def get_post_by_id(post_id):
@@ -20,6 +30,11 @@ def get_post_by_id(post_id):
         return jsonify({"id": post.identity, "title": post["title"], "content": post["content"]})
     return jsonify({"error": "Post not found"}), 404
 
+
+# ============================
+# Création d'un post
+# ============================
+
 @comments_bp.route('/users/<int:user_id>/posts', methods=['GET'])
 def get_user_posts(user_id):
     user = graph.nodes.get(user_id)
@@ -27,6 +42,11 @@ def get_user_posts(user_id):
         posts = graph.match((user,), r_type="CREATED")
         return jsonify([{"id": post.end_node.identity, "title": post.end_node["title"], "content": post.end_node["content"]} for post in posts])
     return jsonify({"error": "User not found"}), 404
+
+
+# ========================================
+# Création d'un post
+# ========================================
 
 @comments_bp.route('/users/<int:user_id>/posts', methods=['POST'])
 def create_post(user_id):
@@ -41,6 +61,11 @@ def create_post(user_id):
         return jsonify({"message": "Post created successfully"}), 201
     return jsonify({"error": "User not found"}), 404
 
+
+# ========================================
+# Suppression d'un post
+# ========================================
+
 @comments_bp.route('/posts/<int:post_id>', methods=['DELETE'])
 def delete_post(post_id):
     post = graph.nodes.get(post_id)
@@ -48,6 +73,11 @@ def delete_post(post_id):
         graph.delete(post)
         return jsonify({"message": "Post deleted successfully"})
     return jsonify({"error": "Post not found"}), 404
+
+
+# ========================================
+# Mise à jour d'un post
+# ========================================
 
 @comments_bp.route('/posts/<int:post_id>', methods=['PUT'])
 def update_post(post_id):
@@ -60,6 +90,11 @@ def update_post(post_id):
         return jsonify({"message": "Post updated successfully"})
     return jsonify({"error": "Post not found"}), 404
 
+
+# ========================================
+# Récupération des commentaires d'un post
+# ========================================
+
 @comments_bp.route('/posts/<int:post_id>/like', methods=['POST'])
 def like_post(post_id):
     data = request.json
@@ -71,6 +106,11 @@ def like_post(post_id):
         relations.create_likes_relationship(user, post)
         return jsonify({"message": "Post liked successfully"})
     return jsonify({"error": "User or post not found"}), 404
+
+
+# ========================================
+# Suppression d'un like sur un post
+# ========================================
 
 @comments_bp.route('/posts/<int:post_id>/like', methods=['DELETE'])
 def unlike_post(post_id):

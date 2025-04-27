@@ -9,26 +9,47 @@ graph = Graph("bolt://localhost:7687", auth=("neo4j", "password"))
 commentaire = Commentaire(graph)
 relations = Relations(graph)
 
+# ============================
+# Routes pour les commentaires
+# ============================
+
+# Récupération de tous les commentaires
 @posts_bp.route('/comments', methods=['GET'])
 def get_all_comments():
+    """Retourne tous les commentaires"""
     comments = graph.nodes.match("Comment")
     return jsonify([
         {"id": comment.identity, "content": comment["content"]}
         for comment in comments
     ])
 
+
+# ========================================
+# Récupération d'un commentaire par ID
+# ========================================
+
 @posts_bp.route('/comments/<int:comment_id>', methods=['GET'])
 def get_comment_by_id(comment_id):
+    """Retourne un commentaire spécifique par son ID"""
     comment = graph.nodes.get(comment_id)
     if comment and comment.labels == {"Comment"}:
         return jsonify({"id": comment.identity, "content": comment["content"]})
     return jsonify({"error": "Comment not found"}), 404
 
+
+# ============================
+# Création d'un commentaire
+# ============================
+
 @posts_bp.route('/posts/<int:post_id>/comments', methods=['POST'])
 def create_comment(post_id):
+    """Crée un nouveau commentaire pour un post"""
     data = request.json
-    user_id = data['user_id']
-    content = data['content']
+    user_id = data.get('user_id')
+    content = data.get('content')
+
+    if not all([user_id, content]):
+        return jsonify({"error": "Missing required fields"}), 400
 
     user = graph.nodes.get(user_id)
     post = graph.nodes.get(post_id)
@@ -43,6 +64,11 @@ def create_comment(post_id):
 
     return jsonify({"error": "User or post not found"}), 404
 
+
+# =================================================
+# Récupération de tous les commentaires d'un post
+# =================================================
+
 @posts_bp.route('/posts/<int:post_id>/comments', methods=['GET'])
 def get_comments_for_post(post_id):
     post = graph.nodes.get(post_id)
@@ -54,6 +80,11 @@ def get_comments_for_post(post_id):
         ])
     return jsonify({"error": "Post not found"}), 404
 
+
+# ================================
+# Mise à jour d'un commentaire
+# ================================
+
 @posts_bp.route('/comments/<int:comment_id>', methods=['PUT'])
 def update_comment(comment_id):
     data = request.json
@@ -64,6 +95,11 @@ def update_comment(comment_id):
         return jsonify({"message": "Comment updated successfully"})
     return jsonify({"error": "Comment not found"}), 404
 
+
+# ================================
+# Suppression d'un commentaire
+# ================================
+
 @posts_bp.route('/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
     comment = graph.nodes.get(comment_id)
@@ -71,6 +107,11 @@ def delete_comment(comment_id):
         graph.delete(comment)
         return jsonify({"message": "Comment deleted successfully"})
     return jsonify({"error": "Comment not found"}), 404
+
+
+# ========================================
+# Suppression d'un commentaire d'un post
+# ========================================
 
 @posts_bp.route('/posts/<int:post_id>/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment_from_post(post_id, comment_id):
@@ -83,6 +124,11 @@ def delete_comment_from_post(post_id, comment_id):
             return jsonify({"message": "Comment deleted successfully"})
     return jsonify({"error": "Post or comment not found"}), 404
 
+
+# ========================
+# Like d'un commentaire
+# =======================
+
 @posts_bp.route('/comments/<int:comment_id>/like', methods=['POST'])
 def like_comment(comment_id):
     data = request.json
@@ -92,6 +138,11 @@ def like_comment(comment_id):
     if user and comment and comment.labels == {"Comment"} and user.labels == {"User"}:
         relations.create_likes_relationship(user, comment)
         return jsonify({"message": "Comment liked successfully"})
+    
+
+# ==========================
+# Unlike d'un commentaire
+# ==========================
 
 @posts_bp.route('/comments/<int:comment_id>/like', methods=['DELETE'])
 def unlike_comment(comment_id):

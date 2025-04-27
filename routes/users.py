@@ -9,10 +9,18 @@ utilisateur = Utilisateur(graph)
 relations = Relations(graph)
 
 
+# ============================
+# Routes pour les utilisateurs
+# ============================
+
 @users_bp.route('/users', methods=['GET'])
 def get_users():
     users = graph.nodes.match("User")
     return jsonify([{"id": user.identity, "name": user["name"], "email": user["email"]} for user in users])
+
+# ========================================
+# Récupération d'un utilisateur par ID
+# ========================================
 
 @users_bp.route('/users', methods=['POST'])
 def create_user():
@@ -20,12 +28,22 @@ def create_user():
     utilisateur.create_user(data['name'], data['email'])
     return jsonify({"message": "User created successfully"}), 201
 
+
+# ========================================
+# Récupération d'un utilisateur par ID
+# ========================================
+
 @users_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user_by_id(user_id):
     user = graph.nodes.get(user_id)
     if user and user["name"] and user.labels == {"User"}:
         return jsonify({"id": user.identity, "name": user["name"], "email": user["email"]})
     return jsonify({"error": "User not found"}), 404
+
+
+# ========================================
+# Mise à jour d'un utilisateur
+# ========================================
 
 @users_bp.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
@@ -38,6 +56,11 @@ def update_user(user_id):
         return jsonify({"message": "User updated successfully"})
     return jsonify({"error": "User not found"}), 404
 
+
+# ========================================
+# Suppression d'un utilisateur
+# ========================================
+
 @users_bp.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = graph.nodes.get(user_id)
@@ -46,6 +69,11 @@ def delete_user(user_id):
         return jsonify({"message": "User deleted successfully"})
     return jsonify({"error": "User not found"}), 404
 
+
+# ========================================
+# Récupération des amis d'un utilisateur
+# ========================================
+
 @users_bp.route('/users/<int:user_id>/friends', methods=['GET'])
 def get_user_friends(user_id):
     user = graph.nodes.get(user_id)
@@ -53,6 +81,11 @@ def get_user_friends(user_id):
         friends = graph.match((user,), r_type="FRIENDS_WITH")
         return jsonify([{"id": friend.end_node.identity, "name": friend.end_node["name"]} for friend in friends])
     return jsonify({"error": "User not found"}), 404
+
+
+# ========================================
+# Ajout d'un ami
+# ========================================
 
 @users_bp.route('/users/<int:user_id>/friends', methods=['POST'])
 def add_friend(user_id):
@@ -66,6 +99,11 @@ def add_friend(user_id):
         return jsonify({"message": "Friend added successfully"})
     return jsonify({"error": "User or friend not found"}), 404
 
+
+# ========================================
+# Suppression d'un ami
+# ========================================
+
 @users_bp.route('/users/<int:user_id>/friends/<int:friend_id>', methods=['DELETE'])
 def remove_friend(user_id, friend_id):
     user = graph.nodes.get(user_id)
@@ -77,6 +115,11 @@ def remove_friend(user_id, friend_id):
             return jsonify({"message": "Friend removed successfully"})
     return jsonify({"error": "User or friend not found"}), 404
 
+
+# ========================================
+# Vérification de l'amitié
+# ========================================
+
 @users_bp.route('/users/<int:user_id>/friends/<int:friend_id>', methods=['GET'])
 def check_friendship(user_id, friend_id):
     user = graph.nodes.get(user_id)
@@ -85,6 +128,11 @@ def check_friendship(user_id, friend_id):
         rel = graph.match_one((user, friend), r_type="FRIENDS_WITH")
         return jsonify({"are_friends": rel is not None})
     return jsonify({"error": "User or friend not found"}), 404
+
+
+# ========================================
+# Récupération des amis mutuels
+# ========================================
 
 @users_bp.route('/users/<int:user_id>/mutual-friends/<int:other_id>', methods=['GET'])
 def get_mutual_friends(user_id, other_id):

@@ -20,9 +20,10 @@ def index():
         }
     })
 
-app.register_blueprint(users_bp, url_prefix="/api")
-app.register_blueprint(posts_bp, url_prefix="/api")
-app.register_blueprint(comments_bp, url_prefix="/api")
+app.register_blueprint(users_bp)
+app.register_blueprint(posts_bp)
+app.register_blueprint(comments_bp)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
